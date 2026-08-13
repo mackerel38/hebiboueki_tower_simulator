@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="ヘビ貿易『時短の巨塔』の文字ベース非公式スコアシミュレータ"
+    />
+    <title>時短の巨塔｜スコアシミュレータ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="page-title">
+        <p class="eyebrow">ヘビ貿易 非公式ツール</p>
+        <h1>時短の巨塔</h1>
+        <p class="subtitle">左下から登る、文字だけの連続グリッドマップ</p>
+      </div>
+      <nav id="floor-nav" class="floor-nav" aria-label="階層へ移動"></nav>
+    </header>
+
+    <main>
+      <section class="setup-panel" aria-labelledby="setup-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">START</p>
+            <h2 id="setup-title">開始データ</h2>
+          </div>
+          <p>ランダム幅と、巨塔に入った時点の7スコアを入力してください。</p>
+        </div>
+
+        <div class="setup-grid">
+          <label class="input-card random-width-card" for="random-width-input">
+            <span class="input-label">ランダム幅</span>
+            <input id="random-width-input" type="number" min="0" max="999" step="1" value="0" inputmode="numeric" />
+            <span id="random-band-preview" class="input-help">固定幅：ボックスの結果が安定</span>
+          </label>
+
+          <div id="score-inputs" class="score-inputs"></div>
+
+          <label class="input-card key-input-card" for="master-key-input">
+            <span class="input-label">開始時マスターキー</span>
+            <input id="master-key-input" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" />
+            <span class="input-help">必要な場合だけ入力</span>
+          </label>
+        </div>
+
+        <div class="setup-actions">
+          <button id="start-button" class="primary-button" type="button">入力値で最初から開始</button>
+          <button id="load-example-button" class="quiet-button" type="button">全スコア100の例を入力</button>
+        </div>
+      </section>
+
+      <section id="current-status" class="current-status" aria-labelledby="status-title">
+        <div class="status-heading">
+          <div>
+            <p class="section-number">NOW</p>
+            <h2 id="status-title">現在値</h2>
+          </div>
+          <div class="status-actions">
+            <button id="undo-button" class="quiet-button" type="button" disabled>ひとつ戻す</button>
+            <button id="reset-progress-button" class="quiet-button danger-button" type="button">攻略状況をリセット</button>
+          </div>
+        </div>
+        <div id="score-status" class="score-status"></div>
+        <div class="resource-strip">
+          <div><span>獲得総資産</span><strong id="assets-status">0</strong></div>
+          <div><span>マスターキー</span><strong id="keys-status">0</strong></div>
+          <div><span>取得アイテム</span><strong id="item-count-status">0</strong></div>
+          <div><span>操作済み</span><strong id="resolved-status">0</strong></div>
+          <div><span>今操作できるマス</span><strong id="reachable-status">0</strong></div>
+        </div>
+      </section>
+
+      <section class="tower-section" aria-labelledby="tower-title">
+        <div class="section-heading tower-heading">
+          <div>
+            <p class="section-number">MAP</p>
+            <h2 id="tower-title">巨塔見取り図</h2>
+          </div>
+          <p>WASDまたは矢印キーでヘビを動かします。正面の結界・アイテムに向くと操作コンソールが開きます。</p>
+        </div>
+
+        <div class="map-control-panel">
+          <div class="movement-panel">
+            <div>
+              <p class="section-number">MOVE</p>
+              <strong>WASDで1マス移動</strong>
+              <span id="player-position-status">1F・入口</span>
+            </div>
+            <div id="movement-controls" class="movement-controls" aria-label="移動ボタン">
+              <button class="move-up" type="button" data-move="up" aria-label="上へ移動">▲<kbd>W</kbd></button>
+              <button class="move-left" type="button" data-move="left" aria-label="左へ移動">◀<kbd>A</kbd></button>
+              <button class="move-down" type="button" data-move="down" aria-label="下へ移動">▼<kbd>S</kbd></button>
+              <button class="move-right" type="button" data-move="right" aria-label="右へ移動">▶<kbd>D</kbd></button>
+            </div>
+          </div>
+          <div class="solver-panel">
+            <div>
+              <p class="section-number">SOLVER</p>
+              <strong>欲しいマスまでの確実なルート</strong>
+              <span>ランダム結果は最悪値で判定します。</span>
+            </div>
+            <div class="solver-actions">
+              <button id="solver-mode-button" class="quiet-button" type="button">欲しいものをクリック</button>
+              <button id="solver-clear-button" class="quiet-button" type="button" disabled>ルートを消す</button>
+            </div>
+          </div>
+          <div id="solver-result" class="solver-result" aria-live="polite">
+            <p>「欲しいものをクリック」を押してから、マップ上のアイテムを選んでください。</p>
+          </div>
+        </div>
+
+        <div class="map-legend" aria-label="マップ記号">
+          <span class="legend-gate">結界</span>
+          <span class="legend-reward">報酬</span>
+          <span class="legend-box">ボックス・変換器</span>
+          <span class="legend-wall">通行止め</span>
+          <span class="legend-reachable">到達可能</span>
+          <span class="legend-locked">未到達</span>
+          <span class="legend-done">操作済み</span>
+        </div>
+        <div id="gate-color-legend" class="gate-color-legend" aria-label="結界の色分け"></div>
+
+        <div id="tower-map" class="tower-map"></div>
+      </section>
+
+      <section class="lower-grid">
+        <section class="inventory-panel" aria-labelledby="inventory-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-number">LOOT</p>
+              <h2 id="inventory-title">取得アイテム</h2>
+            </div>
+          </div>
+          <div id="inventory-content" class="empty-content">まだ取得していません。</div>
+        </section>
+
+        <section class="history-panel" aria-labelledby="history-title">
+          <div class="panel-heading">
+            <div>
+              <p class="section-number">LOG</p>
+              <h2 id="history-title">操作履歴</h2>
+            </div>
+          </div>
+          <ol id="history-list" class="history-list"></ol>
+        </section>
+      </section>
+    </main>
+
+    <aside id="action-console" class="action-console" aria-live="polite" aria-labelledby="console-title">
+      <div class="console-grip" aria-hidden="true"></div>
+      <div class="console-inner">
+        <div class="console-heading">
+          <div>
+            <p id="console-kicker" class="section-number">GUIDE</p>
+            <h2 id="console-title">マスを選んでください</h2>
+          </div>
+          <button id="console-close" class="icon-button" type="button" aria-label="操作パネルを閉じる">×</button>
+        </div>
+        <div id="console-content" class="console-content">
+          <p>WASDでヘビを動かし、正面の結界、報酬、ボックス、変換器を操作します。</p>
+        </div>
+      </div>
+    </aside>
+
+    <footer class="page-footer">
+      <p>画像素材を使わず、公開されている文字情報をもとに構成した非公式シミュレータです。</p>
+      <p>Wiki表どおりの38行×15列（黒セルは壁）をWASDで移動でき、確実入手ソルバは経路も復元します。</p>
+      <p>
+        参考：<a href="https://wikiwiki.jp/hebiboueki/%E6%99%82%E7%9F%AD%E3%81%AE%E5%B7%A8%E5%A1%94" target="_blank" rel="noreferrer">時短の巨塔</a>
+        ／ <a href="https://wikiwiki.jp/hebiboueki/%E3%82%B9%E3%82%B3%E3%82%A2%E3%83%9C%E3%83%83%E3%82%AF%E3%82%B9%28%E3%82%AA%E3%83%96%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%29" target="_blank" rel="noreferrer">スコアボックス</a>
+      </p>
+    </footer>
+
+    <script src="tower-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
